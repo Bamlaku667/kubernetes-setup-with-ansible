@@ -198,7 +198,7 @@ Most variables are defined in `inventory/group_vars/all.yml` or within the `defa
 
 ## Cilium CNI
 
-This setup uses **Cilium** as the CNI plugin for Kubernetes, replacing the previously used Flannel. Cilium provides advanced networking, security, and observability features for cloud-native environments. The installation is handled automatically by the `cilium` role within the `setup-k8s.yml` playbook.
+This setup uses **Cilium** as the CNI plugin for Kubernetes. The installation is handled automatically by the `cilium` role within the `setup-k8s.yml` playbook.
 
 ## Containerd `systemdCgroup` Fix
 
