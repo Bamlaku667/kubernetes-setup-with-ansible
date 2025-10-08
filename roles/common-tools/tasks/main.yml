@@ -1,0 +1,12 @@
+- name: Install common network tools (ping, telnet, curl, etc.)
+  package:
+    name: "{{ common_nettools_packages }}"
+    state: present
+  vars:
+    common_nettools_packages: >-
+      {{ 
+        ['iproute', 'net-tools', 'telnet', 'curl', 'wget', 'bind-utils'] 
+        if ansible_os_family == 'RedHat' 
+        else ['iproute2', 'net-tools', 'telnet', 'curl', 'wget', 'dnsutils'] 
+      }}
+  tags: nettools

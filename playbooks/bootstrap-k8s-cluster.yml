@@ -1,0 +1,81 @@
+---
+# ==============================================================================
+# Play 1: Initialize the Kubernetes Control Plane on the First Master (k8s-master1)
+# ==============================================================================
+- name: 1. INITIALIZE KUBERNETES AND DEPLOY CNI ON FIRST MASTER
+  hosts: k8s-master1
+  become: true
+
+  tasks:
+  - name: Ensure sysctl for bridge networking is set (required for K8s)
+    sysctl:
+      name: net.bridge.bridge-nf-call-iptables
+      value: 1
+      state: present
+      reload: yes
+
+  - name: Ensure /etc/containerd exists (just in case)
+    file:
+      path: /etc/containerd
+      state: directory
+      mode: '0755'
+
+  - name: Create kubeadm config file (ClusterConfiguration + InitConfiguration)
+    copy:
+      dest: "{{ kubeadm_config_path }}"
+      content: |
+        apiVersion: kubeadm.k8s.io/v1beta4
+        kind: InitConfiguration
+        localAPIEndpoint:
+          advertiseAddress: "{{ hostvars[inventory_hostname].ansible_host }}"
+          bindPort: 6443
+        nodeRegistration:
+          name: "{{ inventory_hostname }}"
+          criSocket: unix:///run/containerd/containerd.sock 
+        ---
+        apiVersion: kubeadm.k8s.io/v1beta4
+        kind: ClusterConfiguration
+        kubernetesVersion: "v{{ kubernetes_version }}"
+        controlPlaneEndpoint: "{{ control_plane_endpoint }}"
+        networking:
+          podSubnet: "{{ pod_network_cidr }}"
+          serviceSubnet: "{{ service_cidr }}"
+          dnsDomain: "{{ dns_domain }}"
+
+  - name: Run kubeadm init (first master)
+    command: kubeadm init --control-plane-endpoint="{{ control_plane_endpoint }}" --upload-certs --apiserver-advertise-address={{ ansible_host }} --pod-network-cidr={{ pod_network_cidr }} --v=5
+    args:
+      creates: /etc/kubernetes/admin.conf
+    register: kubeadm_init
+
+  - name: Save kubeadm init output to a file
+    copy:
+      dest: /var/log/kubeadm-init.log
+      content: "{{ kubeadm_init.stdout }}
+
+        {{ kubeadm_init.stderr }}"
+      owner: root
+      group: root
+      mode: '0644'
+
+  - name: Create kube config dir for vagrant
+    file:
+      path: /home/vagrant/.kube
+      state: directory
+      owner: vagrant
+      group: vagrant
+      mode: '0755'
+
+  - name: Copy admin.conf to vagrant kube config
+    copy:
+      src: /etc/kubernetes/admin.conf
+      dest: /home/vagrant/.kube/config
+      remote_src: yes
+      owner: vagrant
+      group: vagrant
+      mode: '0644'
+
+  - name: Deploy CNI (Flannel)
+    command: kubectl apply -f {{ cni_manifest }} --kubeconfig /etc/kubernetes/admin.conf
+    register: flannel_apply
+    changed_when: "'created' in flannel_apply.stdout or 'configured' in flannel_apply.stdout"

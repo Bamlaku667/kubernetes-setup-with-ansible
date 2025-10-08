@@ -1,0 +1,61 @@
+---
+
+- name: Ensure firewalld is running
+  service:
+    name: firewalld
+    state: started
+    enabled: yes
+
+- name: Open Kubernetes API server port (6443) on masters
+  firewalld:
+    port: 6443/tcp
+    permanent: yes
+    state: enabled
+    immediate: yes
+  when: inventory_hostname in groups['masters']
+  register: open_ports_result
+
+- name: Show the ports opened
+  debug: 
+    msg: "{{ open_ports_result }}"
+
+- name: Open etcd ports (2379-2380) on masters
+  firewalld:
+    port: "{{ item }}"
+    permanent: yes
+    state: enabled
+    immediate: yes
+  loop:
+  - 2379/tcp
+  - 2380/tcp
+  when: inventory_hostname in groups['masters']
+
+
+- name: Open kube-scheduler, kube-controller-manager, and health ports on masters
+  firewalld:
+    port: "{{ item }}"
+    permanent: yes
+    state: enabled
+    immediate: yes
+  loop:
+  - 10251/tcp # kube-scheduler
+  - 10252/tcp # kube-controller-manager
+  - 10250/tcp # kubelet
+  - 10255/tcp # read-only kubelet (optional)
+  when: inventory_hostname in groups['masters']
+
+- name: Open kubelet, node ports and networking ports on workers
+  firewalld:
+    port: "{{ item }}"
+    permanent: yes
+    state: enabled
+    immediate: yes
+  loop:
+  - 10250/tcp # kubelet
+  - 10255/tcp # read-only kubelet (optional)
+  - 30000-32767/tcp # NodePort services
+  - 8472/udp # Flannel VXLAN (if using flannel)
+  when: inventory_hostname in groups['workers']
+
+- name: Reload firewalld to apply changes
+  command: firewall-cmd --reload

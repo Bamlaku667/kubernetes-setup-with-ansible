@@ -1,0 +1,40 @@
+---
+- name: Reset kubeadm on all hosts
+  hosts: all
+  become: true
+  tasks:
+    - name: Reset kubeadm
+      command: kubeadm reset -f
+
+    - name: Remove .kube directory for vagrant user
+      file:
+        path: /home/vagrant/.kube
+        state: absent
+
+    - name: Remove Containerd config
+      file: 
+        path: /etc/containerd/config.toml
+        state: absent
+
+    - name: Remove Kubernetes configuration directory
+      file:
+        path: /etc/kubernetes
+        state: absent
+
+    - name: Remove etcd data directory
+      file:
+        path: /var/lib/etcd
+        state: absent
+
+    - name: Remove CNI network configurations
+      file:
+        path: /etc/cni/net.d
+        state: absent
+
+    - name: Flush iptables (IPv4)
+      command: iptables -F
+      ignore_errors: true
+
+    - name: Flush iptables (IPv6)
+      command: ip6tables -F
+      ignore_errors: true

@@ -1,0 +1,7 @@
+# a play book for allowing the necessary ports to setup k8s 
+- name: "Configring ports"
+  gather_facts: true
+  become: true
+  hosts: all
+  roles:
+  - ports

@@ -1,0 +1,7 @@
+- name: "Setup common tools"
+  hosts: 
+  - all 
+  roles:
+  - common-tools
+  become: true
+  gather_facts: true

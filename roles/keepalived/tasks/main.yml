@@ -1,0 +1,45 @@
+- name: Install Keepalived
+  package:
+    name: keepalived
+    state: present
+
+- name: Copy check_apiserver.sh script
+  copy:
+    dest: "{{ keepalived_script_path }}"
+    content: |
+      #!/bin/sh
+
+      errorExit() {
+        echo "*** $@" 1>&2
+        exit 1
+      }
+
+      curl --silent --max-time 2 --insecure https://localhost:6443/ -o /dev/null || errorExit "Error GET https://localhost:6443/"
+      curl --silent --max-time 2 --insecure https://{{ vip_address }}:6443/ -o /dev/null || errorExit "Error GET https://{{ vip_address }}:6443/"
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Verify script exists
+  stat:
+    path: "{{ keepalived_script_path }}"
+  register: script_stat
+
+- name: Print confirmation
+  debug:
+    msg: "Keepalived check script deployed at {{ keepalived_script_path }}."
+
+- name: Configure Keepalived
+  template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Keepalived
+
+- name: Ensure Keepalived service is enabled and running
+  service:
+    name: keepalived
+    state: started
+    enabled: yes

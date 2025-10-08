@@ -1,0 +1,47 @@
+- name: Stop docker.service
+  ansible.builtin.systemd:
+    name: docker.service
+    state: stopped
+
+- name: Stop docker.socket
+  ansible.builtin.systemd:
+    name: docker.socket
+    state: stopped
+
+- name: Stop containerd.service (installed via docker-ce)
+  ansible.builtin.systemd:
+    name: containerd.service
+    state: stopped
+  # ignore_errors: yes # in case you want to manage containerd separately later
+
+- name: Disable docker.service
+  ansible.builtin.systemd:
+    name: docker.service
+    enabled: no
+
+- name: Disable docker.socket
+  ansible.builtin.systemd:
+    name: docker.socket
+    enabled: no
+
+- name: Disable containerd.service
+  ansible.builtin.systemd:
+    name: containerd.service
+    enabled: no
+  # ignore_errors: yes
+
+- name: Mask docker.service
+  ansible.builtin.systemd:
+    name: docker.service
+    masked: yes
+
+- name: Mask docker.socket
+  ansible.builtin.systemd:
+    name: docker.socket
+    masked: yes
+
+- name: Mask containerd.service
+  ansible.builtin.systemd:
+    name: containerd.service
+    masked: yes
+  # ignore_errors: yes

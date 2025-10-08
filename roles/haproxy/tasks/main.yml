@@ -1,0 +1,44 @@
+---
+
+- name: Install HAProxy
+  package:
+    name: haproxy
+    state: present
+
+- name: Ensure firewalld is running
+  service:
+    name: firewalld
+    state: started
+    enabled: yes
+
+- name: Open Kubernetes API port on LB
+  firewalld:
+    port: "{{ haproxy_api_port }}/tcp"
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+# --- Ensure runtime directory exists for admin.sock ---
+- name: Ensure /run/haproxy exists
+  file:
+    path: /run/haproxy
+    state: directory
+    owner: haproxy
+    group: haproxy
+    mode: '0755'
+
+- name: Configure HAProxy for Kubernetes API servers
+  template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Restart haproxy
+
+- name: Ensure HAProxy service is enabled and running
+  service:
+    name: haproxy
+    state: started
+    enabled: yes

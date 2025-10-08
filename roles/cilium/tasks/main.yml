@@ -1,0 +1,27 @@
+---
+- name: Create Cilium namespace
+  kubernetes.core.k8s:
+    name: cilium
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Deploy Cilium CNI
+  kubernetes.core.k8s:
+    state: present
+    src: https://raw.githubusercontent.com/cilium/cilium/v1.15/install/kubernetes/quick-install.yaml
+    validate:
+      fail_on_error: yes
+      strict: yes
+
+- name: Wait for Cilium to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: DaemonSet
+    name: cilium
+    namespace: cilium
+  register: cilium_daemonset
+  until: cilium_daemonset.resources[0].status.desiredNumberScheduled == cilium_daemonset.resources[0].status.numberReady
+  retries: 30
+  delay: 10
+

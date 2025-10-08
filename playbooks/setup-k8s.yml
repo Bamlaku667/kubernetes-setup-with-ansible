@@ -1,0 +1,10 @@
+---
+- name: Install Kubernetes components and CNI
+  hosts: all
+  become: true
+  gather_facts: true
+  roles:
+    - k8s-presetup
+    - kubernetes
+    - cilium
+

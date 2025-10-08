@@ -1,0 +1,7 @@
+- name: "Setting up a HAPROXY + KEEPALIVED for Kubernetes"
+  hosts: masters-lb
+  gather_facts: true
+  become: true
+  roles:
+  - haproxy
+  - keepalived

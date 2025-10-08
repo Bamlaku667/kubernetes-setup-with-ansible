@@ -1,0 +1,8 @@
+# a play book to setup SELinux in permissive mode (effectively disabling it)
+---
+- name: "Make SELinux permissive"
+  gather_facts: true
+  become: true
+  roles:
+  - selinux
+  hosts: all

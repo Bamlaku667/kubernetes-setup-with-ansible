@@ -1,0 +1,27 @@
+# task to make selinux permissive and on reboot too
+- name: Set SELinux to permissive mode
+  ansible.builtin.command: setenforce 0
+  when: ansible_selinux.status == "enabled"
+  tags: selinux
+
+- name: Ensure SELinux is set to permissive in config file
+  ansible.builtin.replace:
+    path: /etc/selinux/config
+    regexp: '^SELINUX=.*'
+    replace: 'SELINUX=permissive'
+    backup: yes
+  when: ansible_facts['selinux'].status == "enabled"
+  tags: selinux
+
+- name: Verify SELinux status
+  ansible.builtin.command: getenforce
+  register: selinux_status
+  changed_when: false # this flag is used to prevent the task from being marked as changed which
+  tags: selinux
+
+
+- name: Display SELinux status
+  ansible.builtin.debug:
+    msg: "SELinux status is {{ selinux_status.stdout }}"
+  tags: selinux
+
