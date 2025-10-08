@@ -15,20 +15,20 @@
 
 - name: Create kube config directory for user
   file:
-    path: /home/vagrant/.kube
+    path: /home/supapp/.kube
     state: directory
-    owner: vagrant
-    group: vagrant
+    owner: supapp
+    group: supapp
     mode: '0755'
   when: inventory_hostname == groups['masters'][0]
 
 - name: Copy admin.conf to user kube config
   copy:
     src: /etc/kubernetes/admin.conf
-    dest: /home/vagrant/.kube/config
+    dest: /home/supapp/.kube/config
     remote_src: yes
-    owner: vagrant
-    group: vagrant
+    owner: supapp
+    group: supapp
     mode: '0644'
   when: inventory_hostname == groups['masters'][0]
 

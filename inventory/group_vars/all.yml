@@ -4,18 +4,18 @@ kubernetes_version: "1.34.0"
 containerd_version: "2.1.4"
 containerd_bin_dir: /usr/local/bin
 containerd_config_path: /etc/containerd/config.toml
-ansible_user: vagrant
+ansible_user: supapp
 ansible_ssh_private_key_file: ~/.ssh/id_rsa
 k8s_repo_baseurl: https://pkgs.k8s.io/core:/stable:/v1.34/rpm/
 k8s_repo_gpgkey: https://pkgs.k8s.io/core:/stable:/v1.34/rpm/repodata/repomd.xml.key
 
 kubeadm_config_path: /tmp/kubeadm-config.yaml
-vip_address: 192.168.56.100
-control_plane_endpoint:  192.168.56.100:6443
+vip_address: 192.168.20.150
+control_plane_endpoint:  192.168.20.150:6443
 pod_network_cidr: 10.244.0.0/16
 service_cidr: 10.96.0.0/16
 dns_domain: cluster.local
 k8s_version: v1.34.0
-cni_manifest: "https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml"
+# cni_manifest: "https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml"
 
 keepalived_script_path: /etc/keepalived/check_apiserver.sh

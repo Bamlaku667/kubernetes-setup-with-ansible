@@ -6,9 +6,9 @@
     - name: Reset kubeadm
       command: kubeadm reset -f
 
-    - name: Remove .kube directory for vagrant user
+    - name: Remove .kube directory for supapp user
       file:
-        path: /home/vagrant/.kube
+        path: /home/supapp/.kube
         state: absent
 
     - name: Remove Containerd config
