@@ -53,12 +53,12 @@
     creates: "{{ containerd_config_path }}"
   tags: containerd
 
-- name: Set runtime_type to io.containerd.runc.v2
-  replace:
-    path: "{{ containerd_config_path }}"
-    regexp: '^\s*runtime_type = ".*"$'
-    replace: '  runtime_type = "io.containerd.runc.v2"'
-  tags: containerd
+# - name: Set runtime_type to io.containerd.runc.v2
+#   replace:
+#     path: "{{ containerd_config_path }}"
+#     regexp: '^\s*runtime_type = ".*"$'
+#     replace: '  runtime_type = "io.containerd.runc.v2"'
+#   tags: containerd
 
 - name: Remove misplaced SystemdCgroup entries
   lineinfile:
