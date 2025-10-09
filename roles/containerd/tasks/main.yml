@@ -12,6 +12,25 @@
     remote_src: yes
   tags: containerd
 
+# --- FIX 1: Install Runc OCI Runtime (Required by containerd) ---
+
+- name: Download runc binary (using v1.1.12 as a stable version)
+  ansible.builtin.get_url:
+    url: "https://github.com/opencontainers/runc/releases/download/v1.1.12/runc.amd64"
+    dest: "/tmp/runc.amd64"
+    mode: '0644'
+  tags: runc
+
+- name: Install runc to /usr/local/sbin and make it executable
+  ansible.builtin.copy:
+    src: "/tmp/runc.amd64"
+    dest: "/usr/local/sbin/runc"
+    owner: root
+    group: root
+    mode: '0755'
+    remote_src: yes
+  tags: runc
+
 - name: Create containerd systemd service file
   copy:
     dest: /etc/systemd/system/containerd.service
