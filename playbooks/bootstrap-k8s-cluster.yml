@@ -1,4 +1,7 @@
 ---
+# ==============================================================================
+# Play 1: Initialize the Kubernetes Control Plane on the First Master (k8s-master1)
+# ==============================================================================
 - name: 1. INITIALIZE KUBERNETES AND DEPLOY CNI ON FIRST MASTER
   hosts: k8s-master1
   become: true
@@ -15,7 +18,7 @@
       file:
         path: /etc/containerd
         state: directory
-        mode: '0755'
+        mode: "0755"
 
     - name: Create kubeadm config file (ClusterConfiguration + InitConfiguration)
       copy:
@@ -40,21 +43,35 @@
             dnsDomain: "{{ dns_domain }}"
 
     - name: Run kubeadm init (first master)
-      command: kubeadm init --config="{{ kubeadm_config_path }}" --upload-certs
+      command: kubeadm init --control-plane-endpoint="{{ control_plane_endpoint }}" --upload-certs --apiserver-advertise-address={{ ansible_host }} --pod-network-cidr={{ pod_network_cidr }}
       register: kubeadm_init
       ignore_errors: no
 
     - name: Save kubeadm init output to a file
       copy:
         dest: /var/log/kubeadm-init.log
-        content: "{{ kubeadm_init.stdout }}\n{{ kubeadm_init.stderr }}"
+        content: "{{ kubeadm_init.stdout }}
+          {{ kubeadm_init.stderr }}"
         owner: root
         group: root
-        mode: '0644'
+        mode: "0644"
 
-    - name: Show kubeadm init output
-      debug:
-        msg: "{{ kubeadm_init.stdout }}\n{{ kubeadm_init.stderr }}"
+    - name: Create kube config dir for getfee
+      file:
+        path: /home/getfee/.kube
+        state: directory
+        owner: getfee
+        group: getfee
+        mode: "0755"
+
+    - name: Copy admin.conf to getfee kube config
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /home/getfee/.kube/config
+        remote_src: yes
+        owner: getfee
+        group: getfee
+        mode: "0644"
 
     - name: Ensure kube config dir for getfee exists
       file:
@@ -64,6 +81,11 @@
         group: getfee
         mode: '0755'
 
+    - name: Check if admin.conf exists
+      stat:
+        path: /etc/kubernetes/admin.conf
+      register: admin_conf_stat
+
     - name: Copy admin.conf to getfee kube config if it exists
       copy:
         src: /etc/kubernetes/admin.conf
@@ -72,6 +94,5 @@
         owner: getfee
         group: getfee
         mode: '0644'
-      when: kubeadm_init.rc == 0 and ansible_stat.exists
-      vars:
-        ansible_stat: "{{ lookup('ansible.builtin.stat', '/etc/kubernetes/admin.conf', wantlist=False) }}"
+      when: admin_conf_stat.stat.exists
+
