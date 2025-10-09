@@ -31,7 +31,7 @@
             bindPort: 6443
           nodeRegistration:
             name: "{{ inventory_hostname }}"
-            criSocket: unix:///run/containerd/containerd.sock 
+            criSocket: unix:///run/containerd/containerd.sock
           ---
           apiVersion: kubeadm.k8s.io/v1beta4
           kind: ClusterConfiguration
@@ -43,11 +43,13 @@
             dnsDomain: "{{ dns_domain }}"
 
     - name: Run kubeadm init (first master)
+      # This command initializes the cluster and creates /etc/kubernetes/admin.conf.
       command: kubeadm init --control-plane-endpoint="{{ control_plane_endpoint }}" --upload-certs --apiserver-advertise-address={{ ansible_host }} --pod-network-cidr={{ pod_network_cidr }}
       register: kubeadm_init
-      ignore_errors: no
+      ignore_errors: false
 
     - name: Save kubeadm init output to a file
+      # Save the output, including the join token, for later use and debugging.
       copy:
         dest: /var/log/kubeadm-init.log
         content: "{{ kubeadm_init.stdout }}
@@ -56,24 +58,12 @@
         group: root
         mode: "0644"
 
-    - name: Create kube config dir for getfee
-      file:
-        path: /home/getfee/.kube
-        state: directory
-        owner: getfee
-        group: getfee
-        mode: "0755"
-
-    - name: Copy admin.conf to getfee kube config
-      copy:
-        src: /etc/kubernetes/admin.conf
-        dest: /home/getfee/.kube/config
-        remote_src: yes
-        owner: getfee
-        group: getfee
-        mode: "0644"
-
+    # ----------------------------------------------------------------------
+    # CONSOLIDATED AND CORRECTED KUBECTL ACCESS FOR 'getfee' USER
+    # The original redundant tasks have been replaced by this clean, conditional block.
+    # ----------------------------------------------------------------------
     - name: Ensure kube config dir for getfee exists
+      # Create the required ~/.kube directory with correct ownership.
       file:
         path: /home/getfee/.kube
         state: directory
@@ -82,11 +72,13 @@
         mode: '0755'
 
     - name: Check if admin.conf exists
+      # Stat is used to check for the file's existence before attempting to copy.
       stat:
         path: /etc/kubernetes/admin.conf
       register: admin_conf_stat
 
-    - name: Copy admin.conf to getfee kube config if it exists
+    - name: Copy admin.conf to getfee kube config (conditional)
+      # Copy the configuration and set correct ownership/permissions for the user 'getfee'.
       copy:
         src: /etc/kubernetes/admin.conf
         dest: /home/getfee/.kube/config
@@ -94,5 +86,6 @@
         owner: getfee
         group: getfee
         mode: '0644'
+      # Only copy if the stat check confirms the file exists (i.e., kubeadm init succeeded).
       when: admin_conf_stat.stat.exists
-
+    # ----------------------------------------------------------------------
