@@ -17,7 +17,7 @@ defaults
     timeout server  1m
 
 frontend kubernetes-apiserver
-    bind *:{{ haproxy_api_port }}
+    bind {{vip_address}}:{{ haproxy_api_port }}
     default_backend kubernetes-masters
 
 backend kubernetes-masters
