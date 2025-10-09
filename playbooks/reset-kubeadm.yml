@@ -11,10 +11,10 @@
         path: /home/getfee/.kube
         state: absent
 
-    - name: Remove Containerd config
-      file: 
-        path: /etc/containerd/config.toml
-        state: absent
+    # - name: Remove Containerd config
+    #   file: 
+    #     path: /etc/containerd/config.toml
+    #     state: absent
 
     - name: Remove Kubernetes configuration directory
       file:
