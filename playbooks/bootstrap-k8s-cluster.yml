@@ -43,7 +43,7 @@
           dnsDomain: "{{ dns_domain }}"
 
   - name: Run kubeadm init (first master)
-    command: kubeadm init --control-plane-endpoint="{{ control_plane_endpoint }}" --upload-certs --apiserver-advertise-address={{ ansible_host }} --pod-network-cidr={{ pod_network_cidr }} --v=5
+    command: kubeadm init --control-plane-endpoint="{{ control_plane_endpoint }}" --upload-certs --apiserver-advertise-address={{ ansible_host }} --pod-network-cidr={{ pod_network_cidr }} 
     args:
       creates: /etc/kubernetes/admin.conf
     register: kubeadm_init
