@@ -52,7 +52,6 @@
     copy:
       dest: /var/log/kubeadm-init.log
       content: "{{ kubeadm_init.stdout }}
-
         {{ kubeadm_init.stderr }}"
       owner: root
       group: root
