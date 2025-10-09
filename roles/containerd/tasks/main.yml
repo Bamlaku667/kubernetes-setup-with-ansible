@@ -87,13 +87,13 @@
   until: containerd_socket.stat.exists
   tags: containerd
 
-- name: Enable SystemdCgroup in containerd configuration
-  ansible.builtin.lineinfile:
-    path: /etc/containerd/config.toml
-    regexp: '^\s*SystemdCgroup\s*=\s*false'
-    line: '            SystemdCgroup = true'
-    insertafter: '^\[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options\]$'
-    state: present
-  notify: Restart containerd
+# - name: Enable SystemdCgroup in containerd configuration
+#   ansible.builtin.lineinfile:
+#     path: /etc/containerd/config.toml
+#     regexp: '^\s*SystemdCgroup\s*=\s*false'
+#     line: '            SystemdCgroup = true'
+#     insertafter: '^\[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options\]$'
+#     state: present
+#   notify: Restart containerd
 
 
