@@ -47,6 +47,13 @@
     mode: '0755'
   tags: containerd
 
+# remote the default config first if any 
+- name: Remove existing containerd config if any
+  file:
+    path: "{{ containerd_config_path }}"
+    state: absent
+  tags: containerd
+
 - name: Generate default containerd config if missing
   shell: "{{ containerd_bin_dir }}/containerd config default > {{ containerd_config_path }}"
   args:
