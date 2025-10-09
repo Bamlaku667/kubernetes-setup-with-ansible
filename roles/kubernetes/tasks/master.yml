@@ -7,7 +7,7 @@
     mode: '0644'
 
 - name: Initialize first control plane
-  command: kubeadm init --config {{ kubeadm_config_path }} --upload-certs
+  command: kubeadm init --config {{ kubeadm_config_path }} --upload-certs --apiserver-advertise-address={{ ansible_host }} --v=5
   args:
     creates: /etc/kubernetes/admin.conf
   register: kubeadm_init
@@ -15,20 +15,20 @@
 
 - name: Create kube config directory for user
   file:
-    path: /home/supapp/.kube
+    path: /home/getfee/.kube
     state: directory
-    owner: supapp
-    group: supapp
+    owner: getfee
+    group: getfee
     mode: '0755'
   when: inventory_hostname == groups['masters'][0]
 
 - name: Copy admin.conf to user kube config
   copy:
     src: /etc/kubernetes/admin.conf
-    dest: /home/supapp/.kube/config
+    dest: /home/getfee/.kube/config
     remote_src: yes
-    owner: supapp
-    group: supapp
+    owner: getfee
+    group: getfee
     mode: '0644'
   when: inventory_hostname == groups['masters'][0]
 

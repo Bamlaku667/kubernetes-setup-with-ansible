@@ -58,21 +58,21 @@
       group: root
       mode: '0644'
 
-  - name: Create kube config dir for supapp
+  - name: Create kube config dir for getfee
     file:
-      path: /home/supapp/.kube
+      path: /home/getfee/.kube
       state: directory
-      owner: supapp
-      group: supapp
+      owner: getfee
+      group: getfee
       mode: '0755'
 
-  - name: Copy admin.conf to supapp kube config
+  - name: Copy admin.conf to getfee kube config
     copy:
       src: /etc/kubernetes/admin.conf
-      dest: /home/supapp/.kube/config
+      dest: /home/getfee/.kube/config
       remote_src: yes
-      owner: supapp
-      group: supapp
+      owner: getfee
+      group: getfee
       mode: '0644'
 
   - name: Deploy CNI (Flannel)

@@ -60,13 +60,6 @@
 #     replace: '  runtime_type = "io.containerd.runc.v2"'
 #   tags: containerd
 
-- name: Remove misplaced SystemdCgroup entries
-  lineinfile:
-    path: "{{ containerd_config_path }}"
-    regexp: '^\s*SystemdCgroup\s*=\s*.*$'
-    state: absent
-  tags: containerd
-
 
 
 - name: Ensure containerd service is enabled and started
