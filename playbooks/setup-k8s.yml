@@ -6,5 +6,5 @@
   roles:
     - k8s-presetup
     # - kubernetes
-    - cilium
+    # - cilium
 
