@@ -8,6 +8,7 @@
   copy:
     dest: "{{ keepalived_script_path }}"
     content: |
+      {% raw %}
       #!/bin/bash
 
       errorExit() {
@@ -30,9 +31,11 @@
       else
         errorExit "Swarm manager not available"
       fi
+      {% endraw %}
     owner: root
     group: root
     mode: '0755'
+
 
 - name: Verify health check script deployed
   stat:
