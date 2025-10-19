@@ -1,0 +1,59 @@
+---
+- name: Install Keepalived
+  package:
+    name: keepalived
+    state: present
+
+- name: Create health check script for Docker Swarm manager
+  copy:
+    dest: "{{ keepalived_script_path }}"
+    content: |
+      #!/bin/bash
+
+      errorExit() {
+        echo "*** $@" 1>&2
+        exit 1
+      }
+
+      # Check if Docker is running
+      systemctl is-active --quiet docker || errorExit "Docker service not active"
+
+      # Check if Swarm mode is active
+      if ! docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null | grep -q "active"; then
+        errorExit "Swarm mode not active on this node"
+      fi
+
+      # Check if this node is a manager and control plane is available
+      if docker info --format '{{.Swarm.ControlAvailable}}' 2>/dev/null | grep -q "true"; then
+        echo "Swarm manager is active and healthy"
+        exit 0
+      else
+        errorExit "Swarm manager not available"
+      fi
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Verify health check script deployed
+  stat:
+    path: "{{ keepalived_script_path }}"
+  register: script_stat
+
+- name: Print confirmation
+  debug:
+    msg: "Keepalived Swarm health check script deployed at {{ keepalived_script_path }}"
+
+- name: Configure Keepalived
+  template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Keepalived
+
+- name: Ensure Keepalived service is enabled and running
+  service:
+    name: keepalived
+    state: started
+    enabled: yes
