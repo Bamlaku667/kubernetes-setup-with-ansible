@@ -1,0 +1,12 @@
+# stop disable firewall 
+- name: Stop and disable firewalld
+  hosts: 
+  - masters
+  - workers
+  become: true
+  tasks:
+  - name: Stop firewalld service
+    service:
+      name: firewalld
+      state: stopped
+      enabled: no
