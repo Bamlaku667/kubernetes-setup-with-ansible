@@ -24,6 +24,12 @@
       }}
   tags: texttools
 
+- name: Ensure git is installed
+  package:
+    name: git
+    state: present
+  tags: git   
+
 - name: Ensure common utility tools (unzip, tar, etc.) are installed
   package:
     name: "{{ common_utility_packages }}"
@@ -31,14 +37,9 @@
   vars:
     common_utility_packages: >-
       {{ 
-        ['unzip', 'tar', 'rsync', ''] 
+        ['unzip', 'tar', 'rsync'] 
         if ansible_os_family == 'RedHat' 
         else ['unzip', 'tar', 'rsync'] 
       }}
-  tags: utilitytools  
+  tags: utilitytools
 
-- name: Ensure git is installed
-  package:
-    name: git
-    state: present
-  tags: git   
