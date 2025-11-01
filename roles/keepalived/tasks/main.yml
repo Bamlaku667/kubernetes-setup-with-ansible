@@ -1,3 +1,20 @@
+- name: Allow VRRP protocol (Keepalived)
+  firewalld:
+    rich_rule: 'rule protocol value="vrrp" accept'
+    permanent: true
+    immediate: true
+    state: enabled
+
+- name: Allow Kubernetes API port for HAProxy
+  firewalld:
+    port: 6443/tcp
+    permanent: true
+    immediate: true
+    state: enabled
+
+- name: Reload firewalld
+  command: firewall-cmd --reload
+
 - name: Install Keepalived
   package:
     name: keepalived
