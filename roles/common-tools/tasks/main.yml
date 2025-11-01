@@ -31,9 +31,9 @@
   vars:
     common_utility_packages: >-
       {{ 
-        ['unzip', 'tar', 'rsync', 'htop'] 
+        ['unzip', 'tar', 'rsync', ''] 
         if ansible_os_family == 'RedHat' 
-        else ['unzip', 'tar', 'rsync', 'htop'] 
+        else ['unzip', 'tar', 'rsync'] 
       }}
   tags: utilitytools  
 
