@@ -1,5 +1,4 @@
----
-- name: Update /etc/hosts on all nodes
+- name: Safely append host mappings to /etc/hosts
   hosts: all
   become: yes
   gather_facts: no
@@ -25,10 +24,10 @@
       getfeeharbor: 10.1.80.116
 
   tasks:
-    - name: Ensure each host mapping exists in /etc/hosts
+    - name: Ensure each mapping exists in /etc/hosts (append if missing)
       lineinfile:
         path: /etc/hosts
         line: "{{ item.value }} {{ item.key }}"
         state: present
-        create: yes
+        insertafter: EOF
       loop: "{{ hosts_mapping | dict2items }}"
