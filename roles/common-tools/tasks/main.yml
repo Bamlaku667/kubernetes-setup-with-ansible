@@ -10,3 +10,16 @@
         else ['iproute2', 'net-tools', 'telnet', 'curl', 'wget', 'dnsutils'] 
       }}
   tags: nettools
+
+- name: Ensure common text processing tools (vim, nano, etc.) are installed
+  package:
+    name: "{{ common_texttools_packages }}"
+    state: present
+  vars:
+    common_texttools_packages: >-
+      {{ 
+        ['vim', 'nano', 'jq'] 
+        if ansible_os_family == 'RedHat' 
+        else ['vim', 'nano', 'jq'] 
+      }}
+  tags: texttools
