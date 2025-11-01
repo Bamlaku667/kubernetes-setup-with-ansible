@@ -23,3 +23,22 @@
         else ['vim', 'nano', 'jq'] 
       }}
   tags: texttools
+
+- name: Ensure common utility tools (unzip, tar, etc.) are installed
+  package:
+    name: "{{ common_utility_packages }}"
+    state: present
+  vars:
+    common_utility_packages: >-
+      {{ 
+        ['unzip', 'tar', 'rsync', 'htop'] 
+        if ansible_os_family == 'RedHat' 
+        else ['unzip', 'tar', 'rsync', 'htop'] 
+      }}
+  tags: utilitytools  
+
+- name: Ensure git is installed
+  package:
+    name: git
+    state: present
+  tags: git   
