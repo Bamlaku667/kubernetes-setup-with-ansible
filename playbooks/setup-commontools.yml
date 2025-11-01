@@ -1,6 +1,7 @@
 - name: "Setup common tools"
   hosts: 
   - all 
+  - lb
   roles:
   - common-tools
   become: true
