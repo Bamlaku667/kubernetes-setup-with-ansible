@@ -10,12 +10,11 @@ k8s_repo_baseurl: https://pkgs.k8s.io/core:/stable:/v1.34/rpm/
 k8s_repo_gpgkey: https://pkgs.k8s.io/core:/stable:/v1.34/rpm/repodata/repomd.xml.key
 
 kubeadm_config_path: /tmp/kubeadm-config.yaml
-vip_address: 10.1.46.150
-control_plane_endpoint:  10.1.46.150:6443
+vip_address: 10.1.80.50
+control_plane_endpoint:  10.1.80.50:6443
 pod_network_cidr: 10.244.0.0/16
 service_cidr: 10.96.0.0/16
 dns_domain: cluster.local
 k8s_version: v1.34.0
-# cni_manifest: "https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml"
 
 keepalived_script_path: /etc/keepalived/check_apiserver.sh
