@@ -84,7 +84,13 @@
 #     regexp: '^\s*runtime_type = ".*"$'
 #     replace: '  runtime_type = "io.containerd.runc.v2"'
 #   tags: containerd
-
+- name: Ensure SystemdCgroup is enabled for containerd v1.7+
+  become: true
+  lineinfile:
+    path: /etc/containerd/config.toml
+    regexp: '^ *SystemdCgroup *=.*'
+    line: '  SystemdCgroup = true'
+    insertafter: '\[plugins..*cri.v1.runtime.*containerd.runtimes.runc.options\]'
 
 
 - name: Ensure containerd service is enabled and started
@@ -104,6 +110,8 @@
   delay: 5
   until: containerd_socket.stat.exists
   tags: containerd
+
+
 
 # - name: Enable SystemdCgroup in containerd configuration
 #   ansible.builtin.lineinfile:
