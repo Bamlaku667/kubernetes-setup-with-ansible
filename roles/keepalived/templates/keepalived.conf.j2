@@ -1,6 +1,6 @@
 vrrp_script check_apiserver {
   script "{{ keepalived_script_path }}"
-  interval 3
+  interval 3   
   timeout 10
   fall 5
   rise 2
