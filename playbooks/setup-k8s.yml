@@ -1,6 +1,8 @@
 ---
 - name: Install Kubernetes components and CNI
-  hosts: all
+  hosts: 
+  - masters
+  - workers
   become: true
   gather_facts: true
   roles:
