@@ -1,8 +1,7 @@
 ---
 - name: Install and configure containerd
   hosts: 
-  - masters
-  - workers
+  - k8s-master1
   gather_facts: false
   become: true
   roles:
