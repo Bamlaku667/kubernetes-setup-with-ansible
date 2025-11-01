@@ -1,6 +1,8 @@
 ---
 - name: Install and configure containerd
-  hosts: all
+  hosts: 
+  - masters
+  - workers
   gather_facts: false
   become: true
   roles:
