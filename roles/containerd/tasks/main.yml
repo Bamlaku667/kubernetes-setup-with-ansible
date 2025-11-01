@@ -66,7 +66,6 @@
     mode: '0755'
   tags: containerd
 
-remote the default config first if any 
 - name: Remove existing containerd config if any
   file:
     path: "{{ containerd_config_path }}"
@@ -78,17 +77,6 @@ remote the default config first if any
   args:
     creates: "{{ containerd_config_path }}"
   tags: containerd
-
-- name: Ensure SystemdCgroup is enabled for containerd v1.7+
-  become: true
-  lineinfile:
-    path: /etc/containerd/config.toml
-    regexp: '^ *SystemdCgroup *=.*'
-    line: '  SystemdCgroup = true'
-    insertafter: '\[plugins..*cri.v1.runtime.*containerd.runtimes.runc.options\]'
-  # notify:
-  #   - restart containerd
-
 
 # - name: Set runtime_type to io.containerd.runc.v2
 #   replace:
