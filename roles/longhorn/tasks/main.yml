@@ -8,21 +8,18 @@
       - nfs-utils
       - cryptsetup
       - device-mapper
-      - device-mapper-multipath
     state: present
   when: ansible_os_family in ["RedHat", "Rocky", "AlmaLinux", "CentOS"]
 
+# Multipath is disabled, so no enable/start here
 
-- name: Enable multipath configuration
-  ansible.builtin.command: mpathconf --enable --with_multipathd y
-  args:
-    creates: /etc/multipath.conf
-
-- name: Enable and start multipathd service
-  ansible.builtin.systemd:
+- name: Stop and disable multipathd service (if installed)
+  systemd:
     name: multipathd
-    enabled: true
-    state: started
+    enabled: false
+    state: stopped
+  ignore_errors: true   # in case it's not installed
+  when: ansible_os_family in ["RedHat", "Rocky", "AlmaLinux", "CentOS"]
 
 - name: Enable and start iSCSI service (RHEL-based)
   systemd:
@@ -30,8 +27,6 @@
     enabled: yes
     state: started
   when: ansible_os_family in ["RedHat", "Rocky", "AlmaLinux", "CentOS"]
-
-
 
 - name: Load required kernel modules
   ansible.builtin.modprobe:
