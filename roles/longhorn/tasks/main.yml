@@ -18,7 +18,7 @@
     name: multipathd
     enabled: false
     state: stopped
-  ignore_errors: true   # in case it's not installed
+  ignore_errors: true
   when: ansible_os_family in ["RedHat", "Rocky", "AlmaLinux", "CentOS"]
 
 - name: Enable and start iSCSI service (RHEL-based)
@@ -55,3 +55,27 @@
 
 - debug:
     msg: "Kernel modules loaded: {{ modules_check.stdout_lines }}"
+
+# --- New tasks for Longhorn data path ---
+
+- name: Delete old Longhorn directory if exists
+  file:
+    path: /var/lib/longhorn
+    state: absent
+  ignore_errors: true
+
+- name: Create Longhorn data directory on /data
+  file:
+    path: /data/longhorn
+    state: directory
+    owner: 1000   # Longhorn runs as UID 1000
+    group: 1000
+    mode: '0755'
+
+- name: Confirm Longhorn data directory exists
+  stat:
+    path: /data/longhorn
+  register: longhorn_dir
+
+- debug:
+    msg: "Longhorn data directory prepared at /data/longhorn: {{ longhorn_dir.stat.exists }}"
