@@ -1,213 +1,221 @@
-# -------------------------------
-# PRE-REQUISITES
-# -------------------------------
-
-- name: Ensure Java is installed
-  ansible.builtin.package:
-    name: java-21-openjdk
-    state: present
-
-- name: Create nifi group
-  ansible.builtin.group:
-    name: "{{ nifi_group }}"
-    state: present
-
-- name: Create nifi user
-  ansible.builtin.user:
-    name: "{{ nifi_user }}"
-    group: "{{ nifi_group }}"
-    shell: /sbin/nologin
-    create_home: no
-    system: yes
-
-# -------------------------------
-# DIRECTORIES
-# -------------------------------
-
-- name: Create NiFi directories
-  ansible.builtin.file:
-    path: "{{ item.path }}"
-    state: directory
-    owner: "{{ nifi_user }}"
-    group: "{{ nifi_group }}"
-    mode: "{{ item.mode | default('0755') }}"
-  loop:
-    - { path: "{{ nifi_install_dir }}" }
-    - { path: "{{ nifi_data_dir }}" }
-    - { path: "{{ nifi_install_dir }}/certs", mode: "0750" }
-    - { path: "{{ nifi_install_dir }}/conf", mode: "0750" }
-
-# -------------------------------
-# NIFI INSTALLATION
-# -------------------------------
-
-- name: Download NiFi binary
+- name: Download PostgreSQL JDBC driver
   ansible.builtin.get_url:
-    url: "{{ nifi_download_url }}"
-    dest: "/tmp/nifi-{{ nifi_version }}-bin.zip"
+    url: "{{ postgresql_jdbc_url }}"
+    dest: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}/drivers/postgresql-42.7.5.jar"
     mode: '0644'
 
-- name: Unzip NiFi
-  ansible.builtin.unarchive:
-    src: "/tmp/nifi-{{ nifi_version }}-bin.zip"
-    dest: "{{ nifi_install_dir }}"
-    remote_src: yes
-    creates: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}"
+# # -------------------------------
+# # PRE-REQUISITES
+# # -------------------------------
 
-- name: Ensure NiFi ownership (recursive)
-  ansible.builtin.file:
-    path: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}"
-    owner: "{{ nifi_user }}"
-    group: "{{ nifi_group }}"
-    recurse: yes
+# - name: Ensure Java is installed
+#   ansible.builtin.package:
+#     name: java-21-openjdk
+#     state: present
 
-# -------------------------------
-# MAKE SCRIPTS EXECUTABLE
-# -------------------------------
+# - name: Create nifi group
+#   ansible.builtin.group:
+#     name: "{{ nifi_group }}"
+#     state: present
 
-- name: Make NiFi bin scripts executable
-  ansible.builtin.file:
-    path: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}/bin/{{ item }}"
-    mode: '0755'
-    owner: "{{ nifi_user }}"
-    group: "{{ nifi_group }}"
-  loop:
-    - nifi.sh
-    - nifi-env.sh
+# - name: Create nifi user
+#   ansible.builtin.user:
+#     name: "{{ nifi_user }}"
+#     group: "{{ nifi_group }}"
+#     shell: /sbin/nologin
+#     create_home: no
+#     system: yes
 
-    # add any other scripts if needed
+# # -------------------------------
+# # DIRECTORIES
+# # -------------------------------
 
-# -------------------------------
-# SSL CERTIFICATES
-# -------------------------------
+# - name: Create NiFi directories
+#   ansible.builtin.file:
+#     path: "{{ item.path }}"
+#     state: directory
+#     owner: "{{ nifi_user }}"
+#     group: "{{ nifi_group }}"
+#     mode: "{{ item.mode | default('0755') }}"
+#   loop:
+#     - { path: "{{ nifi_install_dir }}" }
+#     - { path: "{{ nifi_data_dir }}" }
+#     - { path: "{{ nifi_install_dir }}/certs", mode: "0750" }
+#     - { path: "{{ nifi_install_dir }}/conf", mode: "0750" }
 
-- name: Generate OpenSSL config with SANs
-  ansible.builtin.copy:
-    dest: "{{ nifi_install_dir }}/certs/openssl.cnf"
-    owner: "{{ nifi_user }}"
-    group: "{{ nifi_group }}"
-    mode: '0644'
-    content: |
-      [ req ]
-      distinguished_name = req_distinguished_name
-      req_extensions     = v3_req
-      prompt = no
-      [ req_distinguished_name ]
-      C = ET
-      ST = AddisAbaba
-      L = AddisAbaba
-      O = SuperApp
-      OU = NiFiCluster
-      CN = {{ ansible_hostname }}
-      [ v3_req ]
-      subjectAltName = @alt_names
-      [ alt_names ]
-      DNS.1 = {{ ansible_hostname }}
-      DNS.2 = nifi01
-      DNS.3 = nifi02
-      DNS.4 = nifi03
-      DNS.5 = getfeenifi.cbe.com.et
-      DNS.6 = nifilb.cbe.com.et
-      IP.1 = 10.1.80.111
-      IP.2 = 10.1.80.112
-      IP.3 = 10.1.80.113
+# # -------------------------------
+# # NIFI INSTALLATION
+# # -------------------------------
 
-- name: Generate private key
-  ansible.builtin.command:
-    cmd: openssl genrsa -out {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.key 2048
-    creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.key"
+# - name: Download NiFi binary
+#   ansible.builtin.get_url:
+#     url: "{{ nifi_download_url }}"
+#     dest: "/tmp/nifi-{{ nifi_version }}-bin.zip"
+#     mode: '0644'
 
-- name: Generate certificate signing request (CSR)
-  ansible.builtin.command:
-    cmd: >
-      openssl req -new -key {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.key
-      -out {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.csr
-      -config {{ nifi_install_dir }}/certs/openssl.cnf
-    creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.csr"
+# - name: Unzip NiFi
+#   ansible.builtin.unarchive:
+#     src: "/tmp/nifi-{{ nifi_version }}-bin.zip"
+#     dest: "{{ nifi_install_dir }}"
+#     remote_src: yes
+#     creates: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}"
 
-- name: Generate self-signed certificate
-  ansible.builtin.command:
-    cmd: >
-      openssl x509 -req -in {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.csr
-      -signkey {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.key
-      -out {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.crt
-      -days 1095 -extensions v3_req -extfile {{ nifi_install_dir }}/certs/openssl.cnf
-    creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.crt"
+# - name: Ensure NiFi ownership (recursive)
+#   ansible.builtin.file:
+#     path: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}"
+#     owner: "{{ nifi_user }}"
+#     group: "{{ nifi_group }}"
+#     recurse: yes
 
-# -------------------------------
-# CREATE PKCS12 & KEYSTORES
-# -------------------------------
+# # -------------------------------
+# # MAKE SCRIPTS EXECUTABLE
+# # -------------------------------
 
-- name: Convert key and certificate to PKCS12
-  ansible.builtin.command:
-    cmd: >
-      openssl pkcs12 -export
-      -in {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.crt
-      -inkey {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.key
-      -out {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.p12
-      -name {{ ansible_hostname }}
-      -passout pass:changeit
-    creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.p12"
-    chdir: "{{ nifi_install_dir }}/certs"
+# - name: Make NiFi bin scripts executable
+#   ansible.builtin.file:
+#     path: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}/bin/{{ item }}"
+#     mode: '0755'
+#     owner: "{{ nifi_user }}"
+#     group: "{{ nifi_group }}"
+#   loop:
+#     - nifi.sh
+#     - nifi-env.sh
 
-- name: Create Java keystore (PKCS12 format)
-  ansible.builtin.command:
-    cmd: >
-      keytool -importkeystore
-      -srckeystore {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.p12
-      -srcstoretype PKCS12
-      -srcstorepass changeit
-      -destkeystore {{ nifi_install_dir }}/certs/keystore.p12
-      -deststoretype PKCS12
-      -storepass changeit
-      -keypass changeit
-      -noprompt
-    chdir: "{{ nifi_install_dir }}/certs"
-    creates: "{{ nifi_install_dir }}/certs/keystore.p12"
+#     # add any other scripts if needed
 
-- name: Create truststore and import node certificate
-  ansible.builtin.command:
-    cmd: >
-      keytool -import -trustcacerts
-      -alias {{ ansible_hostname }}
-      -file {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.crt
-      -keystore {{ nifi_install_dir }}/certs/truststore.jks
-      -storepass changeit
-      -noprompt
-    chdir: "{{ nifi_install_dir }}/certs"
-    creates: "{{ nifi_install_dir }}/certs/truststore.jks"
+# # -------------------------------
+# # SSL CERTIFICATES
+# # -------------------------------
 
-# -------------------------------
-# SYSTEMD SERVICE
-# -------------------------------
+# - name: Generate OpenSSL config with SANs
+#   ansible.builtin.copy:
+#     dest: "{{ nifi_install_dir }}/certs/openssl.cnf"
+#     owner: "{{ nifi_user }}"
+#     group: "{{ nifi_group }}"
+#     mode: '0644'
+#     content: |
+#       [ req ]
+#       distinguished_name = req_distinguished_name
+#       req_extensions     = v3_req
+#       prompt = no
+#       [ req_distinguished_name ]
+#       C = ET
+#       ST = AddisAbaba
+#       L = AddisAbaba
+#       O = SuperApp
+#       OU = NiFiCluster
+#       CN = {{ ansible_hostname }}
+#       [ v3_req ]
+#       subjectAltName = @alt_names
+#       [ alt_names ]
+#       DNS.1 = {{ ansible_hostname }}
+#       DNS.2 = nifi01
+#       DNS.3 = nifi02
+#       DNS.4 = nifi03
+#       DNS.5 = getfeenifi.cbe.com.et
+#       DNS.6 = nifilb.cbe.com.et
+#       IP.1 = 10.1.80.111
+#       IP.2 = 10.1.80.112
+#       IP.3 = 10.1.80.113
 
-- name: Create NiFi systemd service
-  ansible.builtin.copy:
-    dest: /etc/systemd/system/nifi.service
-    mode: '0644'
-    content: |
-      [Unit]
-      Description=Apache NiFi Dataflow
-      After=network.target
+# - name: Generate private key
+#   ansible.builtin.command:
+#     cmd: openssl genrsa -out {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.key 2048
+#     creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.key"
 
-      [Service]
-      Type=forking
-      User={{ nifi_user }}
-      Group={{ nifi_group }}
-      ExecStart={{ nifi_install_dir }}/nifi-{{ nifi_version }}/bin/nifi.sh start
-      ExecStop={{ nifi_install_dir }}/nifi-{{ nifi_version }}/bin/nifi.sh stop
-      Restart=on-abort
-      LimitNOFILE=65536
+# - name: Generate certificate signing request (CSR)
+#   ansible.builtin.command:
+#     cmd: >
+#       openssl req -new -key {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.key
+#       -out {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.csr
+#       -config {{ nifi_install_dir }}/certs/openssl.cnf
+#     creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.csr"
 
-      [Install]
-      WantedBy=multi-user.target
+# - name: Generate self-signed certificate
+#   ansible.builtin.command:
+#     cmd: >
+#       openssl x509 -req -in {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.csr
+#       -signkey {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.key
+#       -out {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.crt
+#       -days 1095 -extensions v3_req -extfile {{ nifi_install_dir }}/certs/openssl.cnf
+#     creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.crt"
 
-- name: Reload systemd daemon
-  ansible.builtin.systemd:
-    daemon_reload: yes
+# # -------------------------------
+# # CREATE PKCS12 & KEYSTORES
+# # -------------------------------
 
-- name: Enable and start NiFi
-  ansible.builtin.systemd:
-    name: nifi
-    enabled: yes
-    state: started
+# - name: Convert key and certificate to PKCS12
+#   ansible.builtin.command:
+#     cmd: >
+#       openssl pkcs12 -export
+#       -in {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.crt
+#       -inkey {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.key
+#       -out {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.p12
+#       -name {{ ansible_hostname }}
+#       -passout pass:changeit
+#     creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.p12"
+#     chdir: "{{ nifi_install_dir }}/certs"
+
+# - name: Create Java keystore (PKCS12 format)
+#   ansible.builtin.command:
+#     cmd: >
+#       keytool -importkeystore
+#       -srckeystore {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.p12
+#       -srcstoretype PKCS12
+#       -srcstorepass changeit
+#       -destkeystore {{ nifi_install_dir }}/certs/keystore.p12
+#       -deststoretype PKCS12
+#       -storepass changeit
+#       -keypass changeit
+#       -noprompt
+#     chdir: "{{ nifi_install_dir }}/certs"
+#     creates: "{{ nifi_install_dir }}/certs/keystore.p12"
+
+# - name: Create truststore and import node certificate
+#   ansible.builtin.command:
+#     cmd: >
+#       keytool -import -trustcacerts
+#       -alias {{ ansible_hostname }}
+#       -file {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.crt
+#       -keystore {{ nifi_install_dir }}/certs/truststore.jks
+#       -storepass changeit
+#       -noprompt
+#     chdir: "{{ nifi_install_dir }}/certs"
+#     creates: "{{ nifi_install_dir }}/certs/truststore.jks"
+
+
+
+# # -------------------------------
+# # SYSTEMD SERVICE
+# # -------------------------------
+
+# - name: Create NiFi systemd service
+#   ansible.builtin.copy:
+#     dest: /etc/systemd/system/nifi.service
+#     mode: '0644'
+#     content: |
+#       [Unit]
+#       Description=Apache NiFi Dataflow
+#       After=network.target
+
+#       [Service]
+#       Type=forking
+#       User={{ nifi_user }}
+#       Group={{ nifi_group }}
+#       ExecStart={{ nifi_install_dir }}/nifi-{{ nifi_version }}/bin/nifi.sh start
+#       ExecStop={{ nifi_install_dir }}/nifi-{{ nifi_version }}/bin/nifi.sh stop
+#       Restart=on-abort
+#       LimitNOFILE=65536
+
+#       [Install]
+#       WantedBy=multi-user.target
+
+# - name: Reload systemd daemon
+#   ansible.builtin.systemd:
+#     daemon_reload: yes
+
+# - name: Enable and start NiFi
+#   ansible.builtin.systemd:
+#     name: nifi
+#     enabled: yes
+#     state: started
