@@ -113,8 +113,7 @@
       -name {{ ansible_hostname }} -passout pass:changeit
     creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.p12"
     chdir: "{{ nifi_install_dir }}/certs"
-  become: yes
-  become_user: "{{ nifi_user }}"
+
 
 - name: Create Java keystore
   ansible.builtin.command:
@@ -127,8 +126,6 @@
       -storepass changeit -keypass changeit
     chdir: "{{ nifi_install_dir }}/certs"
     creates: "{{ nifi_install_dir }}/certs/keystore.jks"
-  become: yes
-  become_user: "{{ nifi_user }}"
   ignore_errors: yes
 
 - name: Create truststore and import certs
@@ -140,8 +137,8 @@
       -storepass changeit -noprompt
     chdir: "{{ nifi_install_dir }}/certs"
     creates: "{{ nifi_install_dir }}/certs/truststore.jks"
-  become: yes
-  become_user: "{{ nifi_user }}"
+
+
 
 
 # # -------------------------------
