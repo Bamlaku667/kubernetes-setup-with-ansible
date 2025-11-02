@@ -1,8 +1,4 @@
-- name: Download PostgreSQL JDBC driver
-  ansible.builtin.get_url:
-    url: "{{ postgresql_jdbc_url }}"
-    dest: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}/drivers/postgresql-42.7.5.jar"
-    mode: '0644'
+
 
 # # -------------------------------
 # # PRE-REQUISITES
@@ -30,18 +26,25 @@
 # # DIRECTORIES
 # # -------------------------------
 
-# - name: Create NiFi directories
-#   ansible.builtin.file:
-#     path: "{{ item.path }}"
-#     state: directory
-#     owner: "{{ nifi_user }}"
-#     group: "{{ nifi_group }}"
-#     mode: "{{ item.mode | default('0755') }}"
-#   loop:
-#     - { path: "{{ nifi_install_dir }}" }
-#     - { path: "{{ nifi_data_dir }}" }
-#     - { path: "{{ nifi_install_dir }}/certs", mode: "0750" }
-#     - { path: "{{ nifi_install_dir }}/conf", mode: "0750" }
+- name: Create NiFi directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ nifi_user }}"
+    group: "{{ nifi_group }}"
+    mode: "{{ item.mode | default('0755') }}"
+  loop:
+    - { path: "{{ nifi_install_dir }}" }
+    - { path: "{{ nifi_data_dir }}" }
+    - { path: "{{ nifi_install_dir }}/certs", mode: "0750" }
+    - { path: "{{ nifi_install_dir }}/conf", mode: "0750" }
+    - { path: "{{ nifi_install_dir }}/drivers", mode: "0750" }
+
+- name: Download PostgreSQL JDBC driver
+  ansible.builtin.get_url:
+    url: "{{ postgresql_jdbc_url }}"
+    dest: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}/drivers/postgresql-42.7.5.jar"
+    mode: '0644'
 
 # # -------------------------------
 # # NIFI INSTALLATION
