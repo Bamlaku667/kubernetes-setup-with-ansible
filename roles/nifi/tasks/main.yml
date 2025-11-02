@@ -123,10 +123,11 @@
       -srcstoretype PKCS12
       -destkeystore {{ nifi_install_dir }}/certs/keystore.jks
       -deststoretype JKS
-      -storepass changeit -keypass changeit
+      -storepass changeit
+      -keypass changeit
+      -noprompt
     chdir: "{{ nifi_install_dir }}/certs"
     creates: "{{ nifi_install_dir }}/certs/keystore.jks"
-  ignore_errors: yes
 
 - name: Create truststore and import certs
   ansible.builtin.command:
