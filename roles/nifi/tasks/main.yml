@@ -183,12 +183,3 @@
     enabled: yes
     state: started
 
-# -------------------------------
-# HANDLERS
-# -------------------------------
-- name: Set NiFi permissions
-  ansible.builtin.file:
-    path: "{{ nifi_install_dir }}"
-    owner: "{{ nifi_user }}"
-    group: "{{ nifi_group }}"
-    recurse: yes
