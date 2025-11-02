@@ -103,41 +103,51 @@
       -days 1095 -extensions v3_req -extfile {{ nifi_install_dir }}/certs/openssl.cnf
     creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.crt"
 
-- name: Convert key and certificate to PKCS12 format 👈 **(NEW TASK TO FIX .p12 ERROR)**
+# -------------------------------
+# SSL CERTIFICATE CONVERSION & KEYSTORE CREATION
+# -------------------------------
+
+- name: Convert key and certificate to PKCS12 format
   ansible.builtin.command:
     cmd: >
       openssl pkcs12 -export
       -in {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.crt
       -inkey {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.key
       -out {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.p12
-      -name {{ ansible_hostname }} -passout pass:changeit
+      -name {{ ansible_hostname }}
+      -passout pass:changeit
     creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.p12"
     chdir: "{{ nifi_install_dir }}/certs"
 
 
-- name: Create Java keystore
+- name: Create Java keystore (PKCS12 format)
   ansible.builtin.command:
     cmd: >
       keytool -importkeystore
       -srckeystore {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.p12
       -srcstoretype PKCS12
-      -destkeystore {{ nifi_install_dir }}/certs/keystore.jks
-      -deststoretype JKS
+      -srcstorepass changeit
+      -destkeystore {{ nifi_install_dir }}/certs/keystore.p12
+      -deststoretype PKCS12
       -storepass changeit
       -keypass changeit
       -noprompt
     chdir: "{{ nifi_install_dir }}/certs"
-    creates: "{{ nifi_install_dir }}/certs/keystore.jks"
+    creates: "{{ nifi_install_dir }}/certs/keystore.p12"
 
-- name: Create truststore and import certs
+
+- name: Create truststore and import node certificate
   ansible.builtin.command:
     cmd: >
-      keytool -import -trustcacerts -alias {{ ansible_hostname }}
+      keytool -import -trustcacerts
+      -alias {{ ansible_hostname }}
       -file {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.crt
       -keystore {{ nifi_install_dir }}/certs/truststore.jks
-      -storepass changeit -noprompt
+      -storepass changeit
+      -noprompt
     chdir: "{{ nifi_install_dir }}/certs"
     creates: "{{ nifi_install_dir }}/certs/truststore.jks"
+
 
 
 
