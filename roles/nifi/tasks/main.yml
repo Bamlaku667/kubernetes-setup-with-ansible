@@ -73,7 +73,8 @@
     group: "{{ nifi_group }}"
   loop:
     - nifi.sh
-    - run.sh
+    - nifi-env.sh
+
     # add any other scripts if needed
 
 # -------------------------------
