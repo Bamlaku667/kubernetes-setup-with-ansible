@@ -1,4 +1,7 @@
----
+# -------------------------------
+# PRE-REQUISITES
+# -------------------------------
+
 - name: Ensure Java is installed
   ansible.builtin.package:
     name: java-21-openjdk
@@ -17,17 +20,26 @@
     create_home: no
     system: yes
 
+# -------------------------------
+# DIRECTORIES
+# -------------------------------
+
 - name: Create NiFi directories
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ item.path }}"
     state: directory
     owner: "{{ nifi_user }}"
     group: "{{ nifi_group }}"
-    mode: '0755'
+    mode: "{{ item.mode | default('0755') }}"
   loop:
-    - "{{ nifi_install_dir }}"
-    - "{{ nifi_data_dir }}"
-    - "{{ nifi_install_dir }}/certs"
+    - { path: "{{ nifi_install_dir }}" }
+    - { path: "{{ nifi_data_dir }}" }
+    - { path: "{{ nifi_install_dir }}/certs", mode: "0750" }
+    - { path: "{{ nifi_install_dir }}/conf", mode: "0750" }
+
+# -------------------------------
+# NIFI INSTALLATION
+# -------------------------------
 
 - name: Download NiFi binary
   ansible.builtin.get_url:
@@ -41,10 +53,31 @@
     dest: "{{ nifi_install_dir }}"
     remote_src: yes
     creates: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}"
-  notify: Set NiFi permissions
+
+- name: Ensure NiFi ownership (recursive)
+  ansible.builtin.file:
+    path: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}"
+    owner: "{{ nifi_user }}"
+    group: "{{ nifi_group }}"
+    recurse: yes
 
 # -------------------------------
-# SSL CERTIFICATE GENERATION STAGE
+# MAKE SCRIPTS EXECUTABLE
+# -------------------------------
+
+- name: Make NiFi bin scripts executable
+  ansible.builtin.file:
+    path: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}/bin/{{ item }}"
+    mode: '0755'
+    owner: "{{ nifi_user }}"
+    group: "{{ nifi_group }}"
+  loop:
+    - nifi.sh
+    - run.sh
+    # add any other scripts if needed
+
+# -------------------------------
+# SSL CERTIFICATES
 # -------------------------------
 
 - name: Generate OpenSSL config with SANs
@@ -58,7 +91,6 @@
       distinguished_name = req_distinguished_name
       req_extensions     = v3_req
       prompt = no
-
       [ req_distinguished_name ]
       C = ET
       ST = AddisAbaba
@@ -66,10 +98,8 @@
       O = SuperApp
       OU = NiFiCluster
       CN = {{ ansible_hostname }}
-
       [ v3_req ]
       subjectAltName = @alt_names
-
       [ alt_names ]
       DNS.1 = {{ ansible_hostname }}
       DNS.2 = nifi01
@@ -104,10 +134,10 @@
     creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.crt"
 
 # -------------------------------
-# SSL CERTIFICATE CONVERSION & KEYSTORE CREATION
+# CREATE PKCS12 & KEYSTORES
 # -------------------------------
 
-- name: Convert key and certificate to PKCS12 format
+- name: Convert key and certificate to PKCS12
   ansible.builtin.command:
     cmd: >
       openssl pkcs12 -export
@@ -118,7 +148,6 @@
       -passout pass:changeit
     creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.p12"
     chdir: "{{ nifi_install_dir }}/certs"
-
 
 - name: Create Java keystore (PKCS12 format)
   ansible.builtin.command:
@@ -135,7 +164,6 @@
     chdir: "{{ nifi_install_dir }}/certs"
     creates: "{{ nifi_install_dir }}/certs/keystore.p12"
 
-
 - name: Create truststore and import node certificate
   ansible.builtin.command:
     cmd: >
@@ -147,30 +175,6 @@
       -noprompt
     chdir: "{{ nifi_install_dir }}/certs"
     creates: "{{ nifi_install_dir }}/certs/truststore.jks"
-
-
-
-
-
-# # -------------------------------
-# # CONFIGURATION TEMPLATES
-# # -------------------------------
-
-# - name: Configure nifi.properties
-#   ansible.builtin.template:
-#     src: nifi.properties.j2
-#     dest: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}/conf/nifi.properties"
-#     owner: "{{ nifi_user }}"
-#     group: "{{ nifi_group }}"
-#     mode: '0644'
-
-# - name: Configure state-management.xml
-#   ansible.builtin.template:
-#     src: state-management.xml.j2
-#     dest: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}/conf/state-management.xml"
-#     owner: "{{ nifi_user }}"
-#     group: "{{ nifi_group }}"
-#     mode: '0644'
 
 # -------------------------------
 # SYSTEMD SERVICE
@@ -206,4 +210,3 @@
     name: nifi
     enabled: yes
     state: started
-
