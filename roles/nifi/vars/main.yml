@@ -3,7 +3,7 @@ nifi_user: nifi
 nifi_group: nifi
 nifi_install_dir: /data/nifi
 nifi_data_dir: /data/nifi
-nifi_download_url: "https://dlcdn.apache.org/nifi/{{ nifi_version }}/{{ nifi_version }}-bin.zip"
+nifi_download_url: "https://dlcdn.apache.org/nifi/2.6.0/nifi-2.6.0-bin.zip"
 
 # Cluster settings
 nifi_nodes:

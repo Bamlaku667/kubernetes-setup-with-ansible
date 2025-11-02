@@ -1,7 +1,7 @@
 ---
 - name: Ensure Java is installed
   ansible.builtin.package:
-    name: java-11-openjdk
+    name: java-21-openjdk
     state: present
 
 - name: Create nifi group
