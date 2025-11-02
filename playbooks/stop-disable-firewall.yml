@@ -1,8 +1,7 @@
 # stop disable firewall 
 - name: Stop and disable firewalld
   hosts: 
-  - masters
-  - workers
+  - nifi
   become: true
   tasks:
   - name: Stop firewalld service

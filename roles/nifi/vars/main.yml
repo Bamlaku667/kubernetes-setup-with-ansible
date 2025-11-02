@@ -1,6 +1,6 @@
 nifi_version: 2.6.0
-nifi_user: nifi
-nifi_group: nifi
+nifi_user: getfee
+nifi_group: getfee
 nifi_install_dir: /data/nifi
 nifi_data_dir: /data/nifi
 nifi_download_url: "https://dlcdn.apache.org/nifi/2.6.0/nifi-2.6.0-bin.zip"
