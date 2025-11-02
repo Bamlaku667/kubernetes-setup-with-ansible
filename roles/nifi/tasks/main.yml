@@ -103,6 +103,19 @@
       -days 1095 -extensions v3_req -extfile {{ nifi_install_dir }}/certs/openssl.cnf
     creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.crt"
 
+- name: Convert key and certificate to PKCS12 format 👈 **(NEW TASK TO FIX .p12 ERROR)**
+  ansible.builtin.command:
+    cmd: >
+      openssl pkcs12 -export
+      -in {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.crt
+      -inkey {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.key
+      -out {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.p12
+      -name {{ ansible_hostname }} -passout pass:changeit
+    creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.p12"
+    chdir: "{{ nifi_install_dir }}/certs"
+  become: yes
+  become_user: "{{ nifi_user }}"
+
 - name: Create Java keystore
   ansible.builtin.command:
     cmd: >
@@ -112,8 +125,10 @@
       -destkeystore {{ nifi_install_dir }}/certs/keystore.jks
       -deststoretype JKS
       -storepass changeit -keypass changeit
-    chdir: "{{ nifi_install_dir }}/certs"  # <-- chdir moved out of args:
+    chdir: "{{ nifi_install_dir }}/certs"
     creates: "{{ nifi_install_dir }}/certs/keystore.jks"
+  become: yes
+  become_user: "{{ nifi_user }}"
   ignore_errors: yes
 
 - name: Create truststore and import certs
@@ -123,8 +138,10 @@
       -file {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.crt
       -keystore {{ nifi_install_dir }}/certs/truststore.jks
       -storepass changeit -noprompt
-    chdir: "{{ nifi_install_dir }}/certs"  # <-- chdir moved out of args:
+    chdir: "{{ nifi_install_dir }}/certs"
     creates: "{{ nifi_install_dir }}/certs/truststore.jks"
+  become: yes
+  become_user: "{{ nifi_user }}"
 
 
 # # -------------------------------
