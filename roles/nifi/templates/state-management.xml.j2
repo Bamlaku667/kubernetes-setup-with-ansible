@@ -1,0 +1,13 @@
+<stateManagement>
+  <local-provider>
+    <id>local-provider</id>
+    <class>org.apache.nifi.controller.state.providers.local.WriteAheadLocalStateProvider</class>
+    <property name="Directory">{{ nifi_data_dir }}/state/local</property>
+  </local-provider>
+  <cluster-provider>
+    <id>cluster-provider</id>
+    <class>org.apache.nifi.controller.state.providers.zookeeper.ZooKeeperStateProvider</class>
+    <property name="Connect String">{% for node in nifi_nodes %}{{ node.split(':')[1] }}:2181{% if not loop.last %},{% endif %}{% endfor %}</property>
+    <property name="Root Node">/nifi</property>
+  </cluster-provider>
+</stateManagement>

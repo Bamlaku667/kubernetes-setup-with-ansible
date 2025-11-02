@@ -1,0 +1,51 @@
+nifi_version: 1.28.0
+nifi_user: nifi
+nifi_group: nifi
+nifi_install_dir: /data/nifi
+nifi_data_dir: /data/nifi
+nifi_download_url: "https://downloads.apache.org/nifi/{{ nifi_version }}/nifi-{{ nifi_version }}-bin.tar.gz"
+
+# Cluster settings
+nifi_nodes:
+  - nifi01:10.1.80.111
+  - nifi02:10.1.80.112
+  - nifi03:10.1.80.113
+
+nifi_web_port: 8080
+nifi_cluster_port: 8081
+nifi_zk_connect_string: "nifi01:2181,nifi02:2181,nifi03:2181"
+nifi_java_opts: "-Xms1g -Xmx1g"
+nifi_heap_size: "1G"
+nifi_bootstrap_java_opts: "-Xms1g -Xmx1g"
+nifi_flow_configuration_file: "{{ nifi_install_dir }}/current/conf/flow.xml.gz"
+nifi_state_management_file: "{{ nifi_install_dir }}/current/conf/state-management.xml"
+nifi_security_keystore: "{{ nifi_install_dir }}/certs/nifi-keystore.jks"
+nifi_security_truststore: "{{ nifi_install_dir }}/certs/nifi-truststore.jks"
+nifi_security_keystore_password: "changeit"
+nifi_security_truststore_password: "changeit"
+nifi_security_key_password: "changeit"  
+nifi_cluster_node_protocol_port: 8082
+nifi_cluster_node_address: "{{ ansible_hostname }}"
+nifi_remote_input_socket_port: 10000
+nifi_remote_output_socket_port: 10001 
+nifi_zookeeper_data_dir: "{{ nifi_data_dir }}/zookeeper"
+nifi_zookeeper_client_port: 2181
+nifi_zookeeper_max_client_connections: 100
+nifi_app_to_app_secure: true
+nifi_enable_ssl: true
+nifi_ssl_protocol: "TLS"
+nifi_ssl_enabled_protocols: "TLSv1.2,TLSv1.3
+nifi_ssl_client_auth: "REQUIRED"
+nifi_authorizer: "org.apache.nifi.authorization.FileAuthorizer"
+nifi_user_group_provider: "org.apache.nifi.authorization.FileUserGroupProvider"
+nifi_access_policy_provider: "org.apache.nifi.authorization.FileAccessPolicyProvider" 
+nifi_users_file: "{{ nifi_install_dir }}/current/conf/users.xml"
+nifi_groups_file: "{{ nifi_install_dir }}/current/conf/groups.xml"
+nifi_policies_file: "{{ nifi_install_dir }}/current/conf/policies.xml"
+nifi_login_identity_providers_file: "{{ nifi_install_dir }}/current/conf/login-identity-providers.xml"
+nifi_state_management_file: "{{ nifi_install_dir }}/current/conf/state-management.xml"
+nifi_flow_configuration_file: "{{ nifi_install_dir }}/current/conf/flow.xml.gz"
+nifi_prometheus_reporter_port: 9090
+nifi_prometheus_reporter_enabled: true
+nifi_metrics_reporting_interval: "1 min"
+nifi_metrics_reporting_rollover: "5 sec"
