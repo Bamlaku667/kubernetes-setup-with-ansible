@@ -38,7 +38,7 @@
 - name: Extract NiFi
   ansible.builtin.unarchive:
     src: "/tmp/nifi-{{ nifi_version }}.tar.gz"
-    dest: "{{ nifi_install_dir }}"---
+    dest: "{{ nifi_install_dir }}"
 - name: Ensure required packages are installed
   ansible.builtin.package:
     name:
