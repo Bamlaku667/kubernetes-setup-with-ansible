@@ -1,0 +1,50 @@
+---
+# tasks/main.yml - Setup prerequisites for Longhorn storage
+
+- name: Ensure required packages are installed
+  package:
+    name:
+      - iscsi-initiator-utils
+      - nfs-utils
+      - cryptsetup
+    state: present
+  when: ansible_os_family in ["RedHat", "Rocky", "AlmaLinux", "CentOS"]
+
+
+
+- name: Enable and start iSCSI service (RHEL-based)
+  systemd:
+    name: iscsid
+    enabled: yes
+    state: started
+  when: ansible_os_family in ["RedHat", "Rocky", "AlmaLinux", "CentOS"]
+
+
+
+- name: Load required kernel modules
+  ansible.builtin.modprobe:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - nfs
+    - iscsi_tcp
+    - dm_crypt
+
+- name: Ensure kernel modules load on boot
+  lineinfile:
+    path: /etc/modules-load.d/longhorn.conf
+    create: yes
+    line: "{{ item }}"
+  loop:
+    - nfs
+    - iscsi_tcp
+    - dm_crypt
+    - dm_mod
+
+- name: Verify modules are loaded
+  shell: "lsmod | grep -E 'nfs|iscsi_tcp|dm_crypt'"
+  register: modules_check
+  changed_when: false
+
+- debug:
+    msg: "Kernel modules loaded: {{ modules_check.stdout_lines }}"

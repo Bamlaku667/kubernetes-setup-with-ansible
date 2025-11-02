@@ -1,0 +1,7 @@
+# setup long horn storage
+- name: Setup Longhorn Storage
+  hosts: workers
+  become: true
+  roles:
+    - longhorn
+  gather_facts: true
