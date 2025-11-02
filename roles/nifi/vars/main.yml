@@ -13,4 +13,3 @@ nifi_nodes:
 
 nifi_web_port: 8080
 nifi_cluster_port: 8081
-n
