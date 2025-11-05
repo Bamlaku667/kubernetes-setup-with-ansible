@@ -4,9 +4,6 @@
     dest: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}/drivers/postgresql-42.2.24.jar"
     mode: '0644'
 
-# -------------------------------
-# PRE-REQUISITES
-# -------------------------------
 
 - name: Ensure Java is installed
   ansible.builtin.package:
@@ -26,9 +23,6 @@
     create_home: no
     system: yes
 
-# -------------------------------
-# DIRECTORIES
-# -------------------------------
 
 - name: Create NiFi directories
   ansible.builtin.file:
@@ -44,9 +38,6 @@
     - { path: "{{ nifi_install_dir }}/conf", mode: "0750" }
     - { path: "{{ nifi_install_dir }}/drivers", mode: "0750" }
 
-# -------------------------------
-# NIFI INSTALLATION
-# -------------------------------
 
 - name: Download NiFi binary
   ansible.builtin.get_url:
@@ -61,16 +52,12 @@
     remote_src: yes
     creates: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}"
 
-- name: Ensure NiFi ownership (recursive)
+- name: Ensure NiFi ownership
   ansible.builtin.file:
     path: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}"
     owner: "{{ nifi_user }}"
     group: "{{ nifi_group }}"
     recurse: yes
-
-# -------------------------------
-# MAKE SCRIPTS EXECUTABLE
-# -------------------------------
 
 - name: Make NiFi bin scripts executable
   ansible.builtin.file:
@@ -82,11 +69,29 @@
     - nifi.sh
     - nifi-env.sh
 
-    # add any other scripts if needed
+- name: Download PostgreSQL JDBC driver
+  ansible.builtin.get_url:
+    url: "{{ postgresql_jdbc_url }}"
+    dest: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}/drivers/postgresql-42.7.5.jar"
+    mode: '0644'
 
 # -------------------------------
-# SSL CERTIFICATES
+# SSL CERTIFICATES - CA + NODE
 # -------------------------------
+- name: Generate CA private key (only once)
+  ansible.builtin.command:
+    cmd: openssl genrsa -out {{ nifi_install_dir }}/certs/ca.key 4096
+    creates: "{{ nifi_install_dir }}/certs/ca.key"
+
+- name: Generate CA certificate (valid 5 years)
+  ansible.builtin.command:
+    cmd: >
+      openssl req -x509 -new -nodes
+      -key {{ nifi_install_dir }}/certs/ca.key
+      -sha256 -days 1825
+      -out {{ nifi_install_dir }}/certs/ca.crt
+      -subj "/C=ET/ST=AddisAbaba/L=AddisAbaba/O=SuperApp/OU=NiFiCA/CN=NiFi-RootCA"
+    creates: "{{ nifi_install_dir }}/certs/ca.crt"
 
 - name: Generate OpenSSL config with SANs
   ansible.builtin.copy:
@@ -119,7 +124,7 @@
       IP.2 = 10.1.80.112
       IP.3 = 10.1.80.113
 
-- name: Generate private key
+- name: Generate private key for node
   ansible.builtin.command:
     cmd: openssl genrsa -out {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.key 2048
     creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.key"
@@ -132,26 +137,20 @@
       -config {{ nifi_install_dir }}/certs/openssl.cnf
     creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.csr"
 
-- name: Generate self-signed certificate
+- name: Sign node certificate with CA
   ansible.builtin.command:
     cmd: >
       openssl x509 -req -in {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.csr
-      -signkey {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.key
+      -CA {{ nifi_install_dir }}/certs/ca.crt
+      -CAkey {{ nifi_install_dir }}/certs/ca.key
+      -CAcreateserial
       -out {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.crt
       -days 1095 -extensions v3_req -extfile {{ nifi_install_dir }}/certs/openssl.cnf
     creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.crt"
 
-
-- name: Download PostgreSQL JDBC driver
-  ansible.builtin.get_url:
-    url: "{{ postgresql_jdbc_url }}"
-    dest: "{{ nifi_install_dir }}/nifi-{{ nifi_version }}/drivers/postgresql-42.7.5.jar"
-    mode: '0644'
-
 # -------------------------------
-# CREATE PKCS12 & KEYSTORES
+# PKCS12 & KEYSTORE/TRUSTSTORE
 # -------------------------------
-
 - name: Convert key and certificate to PKCS12
   ansible.builtin.command:
     cmd: >
@@ -164,7 +163,7 @@
     creates: "{{ nifi_install_dir }}/certs/{{ ansible_hostname }}.p12"
     chdir: "{{ nifi_install_dir }}/certs"
 
-- name: Create Java keystore (PKCS12 format)
+- name: Create Java keystore (PKCS12)
   ansible.builtin.command:
     cmd: >
       keytool -importkeystore
@@ -179,24 +178,21 @@
     chdir: "{{ nifi_install_dir }}/certs"
     creates: "{{ nifi_install_dir }}/certs/keystore.p12"
 
-- name: Create truststore and import node certificate
+- name: Create truststore and import CA certificate
   ansible.builtin.command:
     cmd: >
       keytool -import -trustcacerts
-      -alias {{ ansible_hostname }}
-      -file {{ nifi_install_dir }}/certs/{{ ansible_hostname }}.crt
+      -alias nifi-ca
+      -file {{ nifi_install_dir }}/certs/ca.crt
       -keystore {{ nifi_install_dir }}/certs/truststore.jks
       -storepass changeit
       -noprompt
     chdir: "{{ nifi_install_dir }}/certs"
     creates: "{{ nifi_install_dir }}/certs/truststore.jks"
 
-
-
 # -------------------------------
 # SYSTEMD SERVICE
 # -------------------------------
-
 - name: Create NiFi systemd service
   ansible.builtin.copy:
     dest: /etc/systemd/system/nifi.service
