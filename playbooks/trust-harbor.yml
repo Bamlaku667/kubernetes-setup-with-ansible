@@ -3,6 +3,7 @@
   hosts: 
   - masters
   - workers
+  - automation
   gather_facts: false
   become: true
   roles:
