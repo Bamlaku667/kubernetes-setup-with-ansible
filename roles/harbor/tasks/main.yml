@@ -9,7 +9,7 @@
 
 - name: Copy Harbor CA certificate to nodes
   copy:
-    src: files/full_chain.crt   # put your full_chain.crt in roles/harbor/files/
+    src: files/ca.crt   # put your full_chain.crt in roles/harbor/files/
     dest: /etc/containerd/certs.d/harbor.cbe.local/ca.crt
     owner: root
     group: root
