@@ -1,5 +1,5 @@
 ---
-- name: Trust harbor on each k8s nodes
+- name: Trust harbor on each kubernetes nodes
   hosts: 
   - masters
   - workers
