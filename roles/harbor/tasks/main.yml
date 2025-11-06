@@ -29,54 +29,54 @@
 
 
 
-- name: Add harbor.cbe.com.et to /etc/hosts
-  lineinfile:
-    path: /etc/hosts
-    line: "10.1.80.116 harbor.cbe.com.et"
-    state: present
-    create: yes
-    backup: yes
+# - name: Add harbor.cbe.com.et to /etc/hosts
+#   lineinfile:
+#     path: /etc/hosts
+#     line: "10.1.80.116 harbor.cbe.com.et"
+#     state: present
+#     create: yes
+#     backup: yes
 
-- name: Stop containerd service
-  ansible.builtin.systemd:
-    name: containerd
-    state: stopped
+# - name: Stop containerd service
+#   ansible.builtin.systemd:
+#     name: containerd
+#     state: stopped
 
-- name: Create new containerd data directory
-  ansible.builtin.file:
-    path: /data/containerd
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
+# - name: Create new containerd data directory
+#   ansible.builtin.file:
+#     path: /data/containerd
+#     state: directory
+#     owner: root
+#     group: root
+#     mode: '0755'
 
-- name: Move existing containerd data (if present)
-  ansible.builtin.command: rsync -a /var/lib/containerd/ /data/containerd/
-  ignore_errors: yes
+# - name: Move existing containerd data (if present)
+#   ansible.builtin.command: rsync -a /var/lib/containerd/ /data/containerd/
+#   ignore_errors: yes
 
-- name: Backup containerd config
-  ansible.builtin.copy:
-    src: /etc/containerd/config.toml
-    dest: /etc/containerd/config.toml.bak
-    remote_src: yes
-    backup: yes
+# - name: Backup containerd config
+#   ansible.builtin.copy:
+#     src: /etc/containerd/config.toml
+#     dest: /etc/containerd/config.toml.bak
+#     remote_src: yes
+#     backup: yes
 
-- name: Update containerd root directory in config.toml
-  ansible.builtin.replace:
-    path: /etc/containerd/config.toml
-    regexp: '^root\s*=.*'
-    replace: "root = \"/data/containerd\""
+# - name: Update containerd root directory in config.toml
+#   ansible.builtin.replace:
+#     path: /etc/containerd/config.toml
+#     regexp: '^root\s*=.*'
+#     replace: "root = \"/data/containerd\""
 
-# - name: Ensure /var/lib/containerd is empty and link to new path
-#   ansible.builtin.command: >
-#     bash -c "rm -rf /var/lib/containerd && ln -s /data/containerd /var/lib/containerd"
-#   args:
-#     warn: false
+- name: Ensure /var/lib/containerd is empty and link to new path
+  ansible.builtin.command: >
+    bash -c "rm -rf /var/lib/containerd && ln -s /data/containerd /var/lib/containerd"
+  args:
+    warn: false
 
-- name: Start containerd service
-  ansible.builtin.systemd:
-    name: containerd
-    state: started
-    enabled: yes
+# - name: Start containerd service
+#   ansible.builtin.systemd:
+#     name: containerd
+#     state: started
+#     enabled: yes
 
 
