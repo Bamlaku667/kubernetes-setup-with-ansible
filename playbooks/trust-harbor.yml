@@ -1,0 +1,9 @@
+---
+- name: Trust harbor on each k8s nodes
+  hosts: 
+  - masters
+  - workers
+  gather_facts: false
+  become: true
+  roles:
+  - harbor

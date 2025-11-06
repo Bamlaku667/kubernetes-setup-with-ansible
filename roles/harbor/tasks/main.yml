@@ -1,0 +1,28 @@
+---
+- name: Create containerd certs directory for Harbor
+  file:
+    path: /etc/containerd/certs.d/harbor.cbe.local
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Copy Harbor CA certificate to nodes
+  copy:
+    src: files/full_chain.crt   # put your full_chain.crt in roles/harbor/files/
+    dest: /etc/containerd/certs.d/harbor.cbe.local/ca.crt
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Restart containerd
+  systemd:
+    name: containerd
+    state: restarted
+    enabled: yes
+
+- name: Restart kubelet
+  systemd:
+    name: kubelet
+    state: restarted
+    enabled: yes
