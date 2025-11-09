@@ -67,11 +67,11 @@
 #     regexp: '^root\s*=.*'
 #     replace: "root = \"/data/containerd\""
 
-- name: Ensure /var/lib/containerd is empty and link to new path
-  ansible.builtin.command: >
-    bash -c "rm -rf /var/lib/containerd && ln -s /data/containerd /var/lib/containerd"
-  args:
-    warn: false
+# - name: Ensure /var/lib/containerd is empty and link to new path
+#   ansible.builtin.command: >
+#     bash -c "rm -rf /var/lib/containerd && ln -s /data/containerd /var/lib/containerd"
+#   args:
+#     warn: false
 
 # - name: Start containerd service
 #   ansible.builtin.systemd:
@@ -80,3 +80,16 @@
 #     enabled: yes
 
 
+- name: Ensure Getfee host mappings are present in /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ item }}"
+    state: present
+    create: yes
+    backup: yes
+  loop:
+    - "10.1.80.91    getfeemongodb1"
+    - "10.1.80.92    getfeemongodb2"
+    - "10.3.80.30    getfeemngdrdb"
+    - "10.1.80.88    getfeepostsql1.cbe.local    getfeepostsql1"
+    - "10.1.80.89    getfeepostsql2.cbe.local    getfeepostsql2"
