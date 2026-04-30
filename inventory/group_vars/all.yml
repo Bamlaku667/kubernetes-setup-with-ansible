@@ -1,7 +1,4 @@
 ---
 ansible_python_interpreter: /usr/bin/python3
 ansible_user: konvoy
-ansible_ssh_private_key_file: /root/.ssh/id_ed25519
-
-
-
+ansible_ssh_private_key_file: /home/rheluser/.ssh/root_priv
