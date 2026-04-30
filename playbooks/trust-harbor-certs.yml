@@ -1,0 +1,60 @@
+- name: Trust both Harbor registries
+  hosts: workers
+  become: yes
+
+  vars:
+    registries:
+      - name: "harbor.dashenbanksc.com"
+        cert: "full_fixed_chain.crt"
+
+      - name: "nkpprodharbornode.dashenbank.local"
+        cert: "server.crt"
+
+    local_cert_path: "/data"
+
+  tasks:
+    # ---- OS TRUST ----
+    - name: Copy certs to OS trust
+      copy:
+        src: "{{ local_cert_path }}/{{ item.cert }}"
+        dest: "/etc/pki/ca-trust/source/anchors/{{ item.name }}.crt"
+      loop: "{{ registries }}"
+
+    - name: Update CA trust
+      command: update-ca-trust
+
+    # ---- CONTAINERD TRUST ----
+    - name: Create containerd cert dirs
+      file:
+        path: "/etc/containerd/certs.d/{{ item.name }}"
+        state: directory
+        mode: '0755'
+      loop: "{{ registries }}"
+
+    - name: Copy certs to containerd
+      copy:
+        src: "{{ local_cert_path }}/{{ item.cert }}"
+        dest: "/etc/containerd/certs.d/{{ item.name }}/ca.crt"
+      loop: "{{ registries }}"
+
+    - name: Create hosts.toml
+      copy:
+        dest: "/etc/containerd/certs.d/{{ item.name }}/hosts.toml"
+        content: |
+          server = "https://{{ item.name }}"
+
+          [host."https://{{ item.name }}"]
+            capabilities = ["pull", "resolve"]
+            ca = "/etc/containerd/certs.d/{{ item.name }}/ca.crt"
+      loop: "{{ registries }}"
+
+    # ---- RESTART ----
+    - name: Restart containerd
+      systemd:
+        name: containerd
+        state: restarted
+
+    - name: Restart kubelet
+      systemd:
+        name: kubelet
+        state: restarted
